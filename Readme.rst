@@ -1,5 +1,13 @@
-OpenPano XML Generator
-**********************
+pelican-pannellum
+=================
 
-if an article contains the panorma keyword, a xml file needed for the 
-openpano/panosalado player is created
+``pelican-pannellum`` creates tiles and json configuration files for the `Pannellum Viewer`_
+
+.. _Pannellum Viewer: https://pannellum.org/
+
+
+Requirements
+------------
+
+Requires Pillow fourpi.pannellum
+
