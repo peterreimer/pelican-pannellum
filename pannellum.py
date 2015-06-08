@@ -16,6 +16,7 @@ from pelican import signals
 from pelican.generators import Generator
 
 from fourpi.pannellum.tour import Tour
+from fourpi.pannellum.exif import Exif
 from fourpi.pannellum.utils import _get_or_create_path
 
 logger = logging.getLogger(__name__)
@@ -52,19 +53,18 @@ class PannellumGenerator(Generator):
         if not os.path.isdir(self.fullsize_panoramas):
             logger.warn("%s does not exist" % self.fullsize_panoramas)
         self.debug = self.settings['PANNELLUM_DEBUG']
-
+        self.panoramas = [os.path.join(self.fullsize_panoramas, pano) for pano in os.listdir(self.fullsize_panoramas) if os.path.isfile(os.path.join(self.fullsize_panoramas, pano)) ]
+        e = Exif(self.panoramas)
+        self.exifdata = e.get_exifdata()
 
     def _create_json(self, obj, json_path, tile_path, base_path):
         if hasattr(obj,'scene_id'):
-            panoramas = []
-            panorama = os.path.join(self.fullsize_panoramas, obj.scene_id + '.jpg')
-            if os.path.isfile(panorama):
-                panoramas.append(panorama)
-            else:
-                logger.error("%s does not exist" % panorama)
             
-            if len(panoramas) > 0:
-                tour = Tour(author="Peter Reimer", debug=self.debug, tile_folder=tile_path, basePath=base_path, panoramas=panoramas)
+            panorama = os.path.join(self.fullsize_panoramas, obj.scene_id + '.jpg')
+            if not os.path.isfile(panorama):
+                logger.error("%s does not exist" % panorama)
+            else:    
+                tour = Tour(debug=self.debug, tile_folder=tile_path, firstScene=obj.scene_id, basePath=base_path, exifdata=self.exifdata, panoramas=self.panoramas)
                 for scene in tour.scenes:
                     scene.tile(force=False)
                     sizes_path = os.path.join(CONTENT_FOLDER, self.sizes_folder, obj.scene_id)
@@ -73,7 +73,7 @@ class PannellumGenerator(Generator):
                         scene.sizes(name, size[0], size[1], sizes_folder=sizes_path)
                 # writing viewer configuration file
                 
-                output_json = os.path.join(tile_path, obj.scene_id, "tour.js")
+                output_json = os.path.join(tile_path, obj.scene_id, "tour.json")
                 f = open(output_json, 'w')
                 f.write(tour.get_json())
                 f.close
@@ -95,7 +95,7 @@ class PannellumGenerator(Generator):
         # since we write our own files
         json_path = os.path.join(self.output_path, self.json_folder)
         tile_path = os.path.join(CONTENT_FOLDER, self.tile_folder)
-        base_path = ''
+        base_path = '../'
         self._get_or_create_path(json_path)
         self._get_or_create_path(tile_path)
 
