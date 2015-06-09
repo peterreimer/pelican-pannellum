@@ -10,6 +10,7 @@ import subprocess
 import os
 import logging
 import math
+import PIL.Image
 from distutils.spawn import find_executable
 
 from pelican import signals
@@ -69,8 +70,8 @@ class PannellumGenerator(Generator):
                     scene.tile(force=False)
                     sizes_path = os.path.join(CONTENT_FOLDER, self.sizes_folder, obj.scene_id)
                     self._get_or_create_path(sizes_path)
-                    for name, size in self.sizes.iteritems():
-                        scene.sizes(name, size[0], size[1], sizes_folder=sizes_path)
+                for name, size in self.sizes.iteritems():
+                    self._get_scales(obj.scene_id, panorama, name, size[0], size[1], sizes_folder=sizes_path)
                 # writing viewer configuration file
                 
                 output_json = os.path.join(tile_path, obj.scene_id, "tour.json")
@@ -78,7 +79,33 @@ class PannellumGenerator(Generator):
                 f.write(tour.get_json())
                 f.close
                 logger.warn('[ok] writing %s' % output_json)
-    
+
+    def _get_scales(self, scene_id, panorama, name, width, height, sizes_folder=None, force=False):
+        if sizes_folder:
+            sizes_folder = _get_or_create_path(os.path.join(sizes_folder))
+        else:
+            sizes_folder = _get_or_create_path(os.path.join(self.tile_folder, 'sizes'))
+
+        file_name = '%s-%s.jpg' % (scene_id, name)
+        file_path = os.path.join(sizes_folder, file_name)
+
+        if not os.path.isfile(file_path) or force:
+            pano = PIL.Image.open(panorama)
+            pano_width, pano_height = pano.size
+            left = 0
+            scale = pano_width / width
+            upper = int(0.5 * (pano_height - height * scale))
+            right = pano_width
+            lower = upper + height * scale
+
+            cropped = pano.crop([left, upper, right, lower])
+            cropped = cropped.resize([width, height], PIL.Image.ANTIALIAS)
+            cropped.save(file_path, quality = 80)
+        else:
+            logger.info('skipping creation of %s' % file_path)
+
+
+
     def _get_or_create_path(self, path):
         """create a directory if it does not exist."""
 
