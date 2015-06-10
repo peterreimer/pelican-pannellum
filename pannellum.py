@@ -61,12 +61,15 @@ class PannellumGenerator(Generator):
         self.exifdata = e.get_exifdata()
 
     def _create_tiles(self, obj, json_path, tile_path, base_path):
-            
+        
         panorama = os.path.join(self.fullsize_panoramas, obj.scene + '.jpg')
+        panoramas = [os.path.join(self.fullsize_panoramas, pano + '.jpg') for pano in obj.scenes ]
+        exifdata = {scene_id: self.exifdata[scene_id] for scene_id in obj.scenes } 
+        
         if not os.path.isfile(panorama):
             logger.error("%s does not exist" % panorama)
         else:    
-            tour = Tour(debug=self.debug, tile_folder=tile_path, firstScene=obj.scene, basePath=base_path, exifdata=self.exifdata, panoramas=self.panoramas)
+            tour = Tour(debug=self.debug, tile_folder=tile_path, firstScene=obj.scene, basePath=base_path, exifdata=exifdata, panoramas=panoramas)
             for scene in tour.scenes:
                 scene.tile(force=False)
                 sizes_path = os.path.join(CONTENT_FOLDER, self.sizes_folder, obj.scene)
@@ -82,7 +85,7 @@ class PannellumGenerator(Generator):
             logger.warn('[ok] writing %s' % output_json)
 
     def _map_locations(self, obj):
-        logger.warn(str(self.tours))
+        
         output_json = os.path.join(self.output_path, obj.url, "loc.json")
         locations = {}
         for scene in obj.scenes:
