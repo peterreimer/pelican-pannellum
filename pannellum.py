@@ -19,6 +19,7 @@ from pelican.generators import Generator
 from fourpi.pannellum.tour import Tour
 from fourpi.pannellum.exif import Exif
 from fourpi.pannellum.utils import _get_or_create_path
+from gettext import lngettext
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +35,7 @@ class PannellumGenerator(Generator):
     def __init__(self, *args, **kwargs):
         """doc"""
         super(PannellumGenerator, self).__init__(*args, **kwargs)
+        
         if 'TILE_FOLDER' not in self.settings: 
             self.tile_folder = TILE_FOLDER
         else:
@@ -58,35 +60,52 @@ class PannellumGenerator(Generator):
         e = Exif(self.panoramas)
         self.exifdata = e.get_exifdata()
 
-    def _create_json(self, obj, json_path, tile_path, base_path):
-        if hasattr(obj,'scene_id'):
+    def _create_tiles(self, obj, json_path, tile_path, base_path):
             
-            panorama = os.path.join(self.fullsize_panoramas, obj.scene_id + '.jpg')
-            if not os.path.isfile(panorama):
-                logger.error("%s does not exist" % panorama)
-            else:    
-                tour = Tour(debug=self.debug, tile_folder=tile_path, firstScene=obj.scene_id, basePath=base_path, exifdata=self.exifdata, panoramas=self.panoramas)
-                for scene in tour.scenes:
-                    scene.tile(force=False)
-                    sizes_path = os.path.join(CONTENT_FOLDER, self.sizes_folder, obj.scene_id)
-                    self._get_or_create_path(sizes_path)
-                for name, size in self.sizes.iteritems():
-                    self._get_scales(obj.scene_id, panorama, name, size[0], size[1], sizes_folder=sizes_path)
-                # writing viewer configuration file
-                
-                output_json = os.path.join(tile_path, obj.scene_id, "tour.json")
-                f = open(output_json, 'w')
-                f.write(tour.get_json())
-                f.close
-                logger.warn('[ok] writing %s' % output_json)
+        panorama = os.path.join(self.fullsize_panoramas, obj.scene + '.jpg')
+        if not os.path.isfile(panorama):
+            logger.error("%s does not exist" % panorama)
+        else:    
+            tour = Tour(debug=self.debug, tile_folder=tile_path, firstScene=obj.scene, basePath=base_path, exifdata=self.exifdata, panoramas=self.panoramas)
+            for scene in tour.scenes:
+                scene.tile(force=False)
+                sizes_path = os.path.join(CONTENT_FOLDER, self.sizes_folder, obj.scene)
+                self._get_or_create_path(sizes_path)
+            for name, size in self.sizes.iteritems():
+                self._get_scales(obj.scene, panorama, name, size[0], size[1], sizes_folder=sizes_path)
+            # writing viewer configuration file
+            
+            output_json = os.path.join(tile_path, obj.scene, "tour.json")
+            f = open(output_json, 'w')
+            f.write(tour.get_json())
+            f.close
+            logger.warn('[ok] writing %s' % output_json)
 
-    def _get_scales(self, scene_id, panorama, name, width, height, sizes_folder=None, force=False):
+    def _map_locations(self, obj):
+        logger.warn(str(self.tours))
+        output_json = os.path.join(self.output_path, obj.url, "loc.json")
+        locations = {}
+        for scene in obj.scenes:
+            exif = self.exifdata[scene]
+            lng = exif['lng']
+            lat = exif['lat']
+            locations[scene] = {
+                'lat':lat,
+                'lng':lng,
+                'url':obj.url,
+                'title':obj.title}
+        f = open(output_json, 'w')
+        f.write(json.dumps(locations, indent=4, separators=(',', ': ')))
+        f.close
+
+
+    def _get_scales(self, scene, panorama, name, width, height, sizes_folder=None, force=False):
         if sizes_folder:
             sizes_folder = _get_or_create_path(os.path.join(sizes_folder))
         else:
             sizes_folder = _get_or_create_path(os.path.join(self.tile_folder, 'sizes'))
 
-        file_name = '%s-%s.jpg' % (scene_id, name)
+        file_name = '%s-%s.jpg' % (scene, name)
         file_path = os.path.join(sizes_folder, file_name)
 
         if not os.path.isfile(file_path) or force:
@@ -104,7 +123,7 @@ class PannellumGenerator(Generator):
         else:
             logger.info('skipping creation of %s' % file_path)
 
-
+        
 
     def _get_or_create_path(self, path):
         """create a directory if it does not exist."""
@@ -117,6 +136,28 @@ class PannellumGenerator(Generator):
         return path
 
 
+
+    def generate_context(self):
+        
+        tours = {}
+        scenes = []
+        for article in self.context['articles']:
+            if hasattr(article,'scene'):
+                scenes.append(article)
+                article.scenes = [article.scene]
+                if hasattr(article,'tour'):
+                    tour = article.tour
+                    if not tour in tours:
+                        tours[tour] = []
+                    tours[tour].append(article.scene)
+        
+        for article in scenes:
+            if hasattr(article,'tour'):
+                article.scenes = tours[article.tour]
+                
+        self.tours = tours 
+                
+    
     def generate_output(self, writer=None):
         # we don't use the writer passed as argument here
         # since we write our own files
@@ -125,9 +166,12 @@ class PannellumGenerator(Generator):
         base_path = '../'
         self._get_or_create_path(json_path)
         self._get_or_create_path(tile_path)
-
+        
         for article in self.context['articles']:
-            self._create_json(article, json_path, tile_path, base_path)
+            if hasattr(article,'scene'):
+                self._create_tiles(article, json_path, tile_path, base_path)
+                self._map_locations(article)
+                    
 
 def get_generators(generators):
     return PannellumGenerator
