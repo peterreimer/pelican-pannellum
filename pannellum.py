@@ -60,6 +60,13 @@ class PannellumGenerator(Generator):
         e = Exif(self.panoramas)
         self.exifdata = e.get_exifdata()
 
+    def js_helper(self):
+        file_path = os.path.join(self.output_path, "helper.js")
+        #output_js = os.path.join(tile_path, obj.scene, "tour.json")
+        f = open(file_path, 'w')
+        f.write("var site_url='%s';" % self.settings['SITEURL'])
+        f.close
+        
     def _create_tiles(self, obj, json_path, tile_path, base_path):
         
         panorama = os.path.join(self.fullsize_panoramas, obj.scene + '.jpg')
@@ -170,6 +177,7 @@ class PannellumGenerator(Generator):
         self._get_or_create_path(json_path)
         self._get_or_create_path(tile_path)
         
+        self.js_helper()
         for article in self.context['articles']:
             if hasattr(article,'scene'):
                 self._create_tiles(article, json_path, tile_path, base_path)
