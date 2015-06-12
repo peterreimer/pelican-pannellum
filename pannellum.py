@@ -6,12 +6,9 @@ Pannellum Generator
 from __future__ import unicode_literals, print_function
 
 import json
-import subprocess
 import os
 import logging
-import math
 import PIL.Image
-from distutils.spawn import find_executable
 
 from pelican import signals
 from pelican.generators import Generator
@@ -19,7 +16,6 @@ from pelican.generators import Generator
 from fourpi.pannellum.tour import Tour
 from fourpi.pannellum.exif import Exif
 from fourpi.pannellum.utils import _get_or_create_path
-from gettext import lngettext
 
 logger = logging.getLogger(__name__)
 
@@ -35,16 +31,13 @@ class PannellumGenerator(Generator):
     def __init__(self, *args, **kwargs):
         """doc"""
         super(PannellumGenerator, self).__init__(*args, **kwargs)
-        
-        if 'TILE_FOLDER' not in self.settings: 
-            self.tile_folder = TILE_FOLDER
-        else:
-            self.tile_folder = self.settings['TILE_FOLDER']
-        
-        if 'SIZES_FOLDER' not in self.settings: 
-            self.sizes_folder = SIZES_FOLDER
-        else:
-            self.sizes_folder = self.settings['SIZES_FOLDER']
+        #context = self.context
+        #context["latest"] = "das letzte"
+        #self.context = context
+        config = self.settings.get('PANNELLUM', {})
+        self.debug = config.get('debug', False)
+        self.tile_folder = config.get('tile_folder', TILE_FOLDER)
+        self.sizes_folder = config.get('sizes_folder', SIZES_FOLDER)
 
         self.json_folder = self.settings['JSON_FOLDER']
         self.sizes  = {
@@ -55,10 +48,10 @@ class PannellumGenerator(Generator):
         self.fullsize_panoramas  = os.path.join(CONTENT_FOLDER, self.settings['FULLSIZE_PANORAMAS'])
         if not os.path.isdir(self.fullsize_panoramas):
             logger.warn("%s does not exist" % self.fullsize_panoramas)
-        self.debug = self.settings['PANNELLUM_DEBUG']
         self.panoramas = [os.path.join(self.fullsize_panoramas, pano) for pano in os.listdir(self.fullsize_panoramas) if os.path.isfile(os.path.join(self.fullsize_panoramas, pano)) ]
         e = Exif(self.panoramas)
         self.exifdata = e.get_exifdata()
+
 
     def js_helper(self):
         file_path = os.path.join(self.output_path, "helper.js")
@@ -79,8 +72,9 @@ class PannellumGenerator(Generator):
             tour = Tour(debug=self.debug, tile_folder=tile_path, firstScene=obj.scene, basePath=base_path, exifdata=exifdata, panoramas=panoramas)
             for scene in tour.scenes:
                 scene.tile(force=False)
-                sizes_path = os.path.join(CONTENT_FOLDER, self.sizes_folder, obj.scene)
-                self._get_or_create_path(sizes_path)
+            
+            sizes_path = os.path.join(CONTENT_FOLDER, self.sizes_folder, obj.scene)
+            self._get_or_create_path(sizes_path)
             for name, size in self.sizes.iteritems():
                 self._get_scales(obj.scene, panorama, name, size[0], size[1], sizes_folder=sizes_path)
             # writing viewer configuration file
@@ -105,7 +99,10 @@ class PannellumGenerator(Generator):
                 'url':obj.url,
                 'title':obj.title}
         f = open(output_json, 'w')
-        f.write(json.dumps(locations, indent=4, separators=(',', ': ')))
+        if self.debug:
+            f.write(json.dumps(locations, sort_keys=True, indent=4, separators=(', ', ': ')))
+        else:
+            f.write(json.dumps(locations, sort_keys=False, indent=None, separators=(',', ':')))
         f.close
 
 
@@ -151,9 +148,18 @@ class PannellumGenerator(Generator):
         
         tours = {}
         scenes = []
+        latest = None
+        # find all scenes/panoramas
         for article in self.context['articles']:
             if hasattr(article,'scene'):
                 scenes.append(article)
+                if not latest:
+                    latest = article.scene
+                    context = self.context
+                    context['latest'] = article
+                    self.context = context
+                logger.error("%s %s" %(article.scene, article.date))
+                
                 article.scenes = [article.scene]
                 if hasattr(article,'tour'):
                     tour = article.tour
