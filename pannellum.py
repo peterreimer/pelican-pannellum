@@ -74,7 +74,7 @@ class PannellumGenerator(Generator):
                 scene.tile(force=False)
             
             sizes_path = os.path.join(CONTENT_FOLDER, self.sizes_folder, obj.scene)
-            self._get_or_create_path(sizes_path)
+            _get_or_create_path(sizes_path)
             for name, size in self.sizes.iteritems():
                 self._get_scales(obj.scene, panorama, name, size[0], size[1], sizes_folder=sizes_path)
             # writing viewer configuration file
@@ -85,19 +85,23 @@ class PannellumGenerator(Generator):
             f.close
             logger.warn('[ok] writing %s' % output_json)
 
+    def worldmap(self):
+        
+        output_json = os.path.join(self.output_path, "worldmap.json")
+        
+        f = open(output_json, 'w')
+        
+        if self.debug:
+            f.write(json.dumps(self.scenes, sort_keys=True, indent=4, separators=(', ', ': ')))
+        else:
+            f.write(json.dumps(self.scenes, sort_keys=False, indent=None, separators=(',', ':')))
+        f.close
+        
+
     def _map_locations(self, obj):
         
         output_json = os.path.join(self.output_path, obj.url, "loc.json")
-        locations = {}
-        for scene in obj.scenes:
-            exif = self.exifdata[scene]
-            lng = exif['lng']
-            lat = exif['lat']
-            locations[scene] = {
-                'lat':lat,
-                'lng':lng,
-                'url':obj.url,
-                'title':obj.title}
+        locations = {scene_id: self.scenes[scene_id] for scene_id in obj.scenes } 
         f = open(output_json, 'w')
         if self.debug:
             f.write(json.dumps(locations, sort_keys=True, indent=4, separators=(', ', ': ')))
@@ -130,36 +134,26 @@ class PannellumGenerator(Generator):
         else:
             logger.info('skipping creation of %s' % file_path)
 
-        
-
-    def _get_or_create_path(self, path):
-        """create a directory if it does not exist."""
-
-        if not os.path.exists(path):
-            try:
-                os.mkdir(path)
-            except OSError:
-                logger.error("Couldn't create the directory" + path)
-        return path
-
-
-
     def generate_context(self):
-        
+        """articles have scene ids and tour ids
+        """
         tours = {}
-        scenes = []
+        scene_articles = []
         latest = None
         # find all scenes/panoramas
         for article in self.context['articles']:
             if hasattr(article,'scene'):
-                scenes.append(article)
+                scene_articles.append(article)
+                # remember the most recent scene as 'latest' to display as banner on homepage 
                 if not latest:
                     latest = article.scene
+                    article.hide_in_index = True
                     context = self.context
                     context['latest'] = article
                     self.context = context
-                logger.error("%s %s" %(article.scene, article.date))
                 
+                # initialize scenes (plural) variable with single scene id
+                # gets evtually overwritten later, when tour id is present on more articles 
                 article.scenes = [article.scene]
                 if hasattr(article,'tour'):
                     tour = article.tour
@@ -167,22 +161,35 @@ class PannellumGenerator(Generator):
                         tours[tour] = []
                     tours[tour].append(article.scene)
         
-        for article in scenes:
+        scenes = {}       
+        for article in scene_articles:
+            
+            exif = self.exifdata[article.scene]
+            lng = exif['lng']
+            lat = exif['lat']
+                        
+            scenes[article.scene] = {
+                'url':article.url,
+                'lat':lat,
+                'lng':lng,
+                'title':article.title
+                }
+            article.exif = exif
             if hasattr(article,'tour'):
                 article.scenes = tours[article.tour]
                 
-        self.tours = tours 
-                
+        self.scenes = scenes                
     
     def generate_output(self, writer=None):
+        logger.error(str(self.scenes ))
         # we don't use the writer passed as argument here
         # since we write our own files
         json_path = os.path.join(self.output_path, self.json_folder)
         tile_path = os.path.join(CONTENT_FOLDER, self.tile_folder)
         base_path = '../'
-        self._get_or_create_path(json_path)
-        self._get_or_create_path(tile_path)
-        
+        _get_or_create_path(json_path)
+        _get_or_create_path(tile_path)
+        self.worldmap()
         self.js_helper()
         for article in self.context['articles']:
             if hasattr(article,'scene'):
