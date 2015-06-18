@@ -24,7 +24,7 @@ setup(name='pelican-pannellum',
       install_requires=[
           'setuptools',
           'Pillow',
-          'fourpi.pannellum'
+          'fourpi.pannellum',
           'pelican'
           # -*- Extra requirements: -*-
       ],
