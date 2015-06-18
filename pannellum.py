@@ -175,6 +175,7 @@ class PannellumGenerator(Generator):
                 'title':article.title
                 }
             article.exif = exif
+            article.template = 'panorama'
             if hasattr(article,'tour'):
                 article.scenes = tours[article.tour]
                 
