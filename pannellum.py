@@ -31,11 +31,9 @@ class PannellumGenerator(Generator):
     def __init__(self, *args, **kwargs):
         """doc"""
         super(PannellumGenerator, self).__init__(*args, **kwargs)
-        #context = self.context
-        #context["latest"] = "das letzte"
-        #self.context = context
         config = self.settings.get('PANNELLUM', {})
         self.debug = config.get('debug', False)
+        self.autoRotate = config.get('autoRotate', 5)
         self.tile_folder = config.get('tile_folder', TILE_FOLDER)
         self.sizes_folder = config.get('sizes_folder', SIZES_FOLDER)
 
@@ -69,7 +67,7 @@ class PannellumGenerator(Generator):
         if not os.path.isfile(panorama):
             logger.error("%s does not exist" % panorama)
         else:    
-            tour = Tour(debug=self.debug, tile_folder=tile_path, firstScene=obj.scene, basePath=base_path, exifdata=exifdata, panoramas=panoramas)
+            tour = Tour(debug=self.debug, tile_folder=tile_path, firstScene=obj.scene, basePath=base_path, autoRotate=self.autoRotate, exifdata=exifdata, panoramas=panoramas)
             for scene in tour.scenes:
                 scene.tile(force=False)
             
