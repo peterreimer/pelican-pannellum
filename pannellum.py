@@ -16,6 +16,7 @@ from pelican.generators import Generator
 from fourpi.pannellum.tour import Tour
 from fourpi.pannellum.exif import Exif
 from fourpi.pannellum.utils import _get_or_create_path
+import gps
 
 logger = logging.getLogger(__name__)
 
@@ -172,6 +173,10 @@ class PannellumGenerator(Generator):
                 'lng':lng,
                 'title':article.title
                 }
+           
+            if lng and lat:
+                l = gps.LatLng((lat,lng))
+                article.latlng = l.sexagesimal(precision=0)
             article.exif = exif
             article.template = 'panorama'
             if hasattr(article,'tour'):
