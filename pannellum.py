@@ -16,7 +16,6 @@ from pelican.generators import Generator
 from fourpi.pannellum.tour import Tour
 from fourpi.pannellum.exif import Exif
 from fourpi.pannellum.utils import _get_or_create_path
-import gps
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +24,40 @@ CONTENT_FOLDER = 'content'
 # setting up some defaults
 TILE_FOLDER = 'tiles'
 SIZES_FOLDER = 'sizes'
+
+class LatLng:
+
+    def __init__(self, latlng):
+        self.latlng = latlng
+        self.lat, self.lng = latlng
+
+    def _dec_to_sexa(self, pos, precision):
+        """convert decimal to sexagesimal coordinates"""
+
+        degree = abs(pos)
+        minutes = 60 * (degree % 1)
+        seconds = 60 * (minutes % 1)
+        
+        return "%d°%d'%.*f''" % (degree, minutes, precision, seconds)
+
+    def sexagesimal(self, precision=0):
+        if self.lat < 0:
+            latRef = "S"
+        elif self.lat > 0:
+            latRef = "N"
+        else:
+            latRef = ""
+        
+        if self.lng < 0:
+            lngRef = "W"
+        elif self.lng > 0:
+            lngRef = "E"
+        else:
+            lngRef = ""
+
+        return "%s %s %s %s" % (self._dec_to_sexa(self.lat,precision), latRef, self._dec_to_sexa(self.lng, precision), lngRef)
+
+
 
 class PannellumGenerator(Generator):
     """Generate XMLs on the output dir, for articles containing pano_ids"""
@@ -173,9 +206,10 @@ class PannellumGenerator(Generator):
                 'lng':lng,
                 'title':article.title
                 }
+            
            
-            if lng and lat:
-                l = gps.LatLng((lat,lng))
+            if lat and lng:
+                l = LatLng((lat,lng))
                 article.latlng = l.sexagesimal(precision=0)
             article.exif = exif
             article.template = 'panorama'
@@ -207,3 +241,16 @@ def get_generators(generators):
 
 def register():
     signals.get_generators.connect(get_generators)
+
+
+if __name__ == "__main__":
+    
+    # Krefeld
+    # Art Breitengrad Längengrad
+    # DG  51.354577629215335  6.537648439407349
+    # GMS N 51° 21' 16.479''  O 6° 32' 15.534''
+
+    latlng = (51.354577629215335, 6.537648439407349)
+    latlng = (-17.86407, 28.70051)
+    l = LatLng(latlng)
+    print(l.sexagesimal(precision=3))
