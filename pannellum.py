@@ -25,39 +25,28 @@ CONTENT_FOLDER = 'content'
 TILE_FOLDER = 'tiles'
 SIZES_FOLDER = 'sizes'
 
-class LatLng:
+def sign(x):
+    if x > 0:
+        return 1
+    elif x < 0:
+        return -1
+    else:
+        return 0
 
-    def __init__(self, latlng):
-        self.latlng = latlng
-        self.lat, self.lng = latlng
+def dec2sexa(angle, latlng, precision=3):
+    """convert decimal to sexagesimal coordinates"""
 
-    def _dec_to_sexa(self, pos, precision):
-        """convert decimal to sexagesimal coordinates"""
-
-        degree = abs(pos)
-        minutes = 60 * (degree % 1)
-        seconds = 60 * (minutes % 1)
-        
-        return "%d°%d'%.*f''" % (degree, minutes, precision, seconds)
-
-    def sexagesimal(self, precision=0):
-        if self.lat < 0:
-            latRef = "S"
-        elif self.lat > 0:
-            latRef = "N"
-        else:
-            latRef = ""
-        
-        if self.lng < 0:
-            lngRef = "W"
-        elif self.lng > 0:
-            lngRef = "E"
-        else:
-            lngRef = ""
-
-        return "%s %s %s %s" % (self._dec_to_sexa(self.lat,precision), latRef, self._dec_to_sexa(self.lng, precision), lngRef)
-
-
+    lettercodes = {
+        'lat':{-1:'S', 0:'', 1:'N'}, 
+        'lng':{-1:'W', 0:'', 1:'E'}
+    }
+    degree = abs(angle)
+    
+    letter = lettercodes[latlng][sign(angle)]
+    minutes = 60 * (degree % 1)
+    seconds = 60 * (minutes % 1)
+    
+    return "%d°%d'%.*f'' %s" % (degree, minutes, precision, seconds, letter)
 
 class PannellumGenerator(Generator):
     """Generate XMLs on the output dir, for articles containing pano_ids"""
@@ -208,9 +197,10 @@ class PannellumGenerator(Generator):
                 }
             
            
-            if lat and lng:
-                l = LatLng((lat,lng))
-                article.latlng = l.sexagesimal(precision=0)
+            if lat:
+                article.Latitude = dec2sexa(lat, latlng='lat', precision=2)
+            if lng:
+                article.Longitude = dec2sexa(lng, latlng='lng', precision=2)
             article.exif = exif
             article.template = 'panorama'
             if hasattr(article,'tour'):
@@ -250,7 +240,13 @@ if __name__ == "__main__":
     # DG  51.354577629215335  6.537648439407349
     # GMS N 51° 21' 16.479''  O 6° 32' 15.534''
 
-    latlng = (51.354577629215335, 6.537648439407349)
-    latlng = (-17.86407, 28.70051)
-    l = LatLng(latlng)
-    print(l.sexagesimal(precision=3))
+    #lat = 0
+    #lng = 0.0
+
+    lat = 51.354577629215335
+    lng = 6.537648439407349
+    #lat = -17.86407
+    #lng = 28.70051
+    #l = LatLng(latlng)
+    print(dec2sexa(lat, latlng='lat', precision=2))
+    print(dec2sexa(lng, latlng='lng', precision=2))
