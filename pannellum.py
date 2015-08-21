@@ -160,17 +160,17 @@ class PannellumGenerator(Generator):
         """
         tours = {}
         scene_articles = []
-        latest = None
+        latest_scene = None
         # find all scenes/panoramas
         for article in self.context['articles']:
             if hasattr(article,'scene'):
                 scene_articles.append(article)
-                # remember the most recent scene as 'latest' to display as banner on homepage 
-                if not latest:
-                    latest = article.scene
-                    article.hide_in_index = True
+                # remember the most recent scene as 'latest_scene' to display as banner on homepage 
+                if not latest_scene:
+                    latest_scene = article.scene
+                    article.latest = True
                     context = self.context
-                    context['latest'] = article
+                    context['latest_scene'] = article
                     self.context = context
                 
                 # initialize scenes (plural) variable with single scene id
