@@ -8,6 +8,7 @@ from __future__ import unicode_literals, print_function
 import json
 import os
 import logging
+import cPickle
 import PIL.Image
 
 from pelican import signals
@@ -70,11 +71,20 @@ class PannellumGenerator(Generator):
         if not os.path.isdir(self.fullsize_panoramas):
             logger.warn("%s does not exist" % self.fullsize_panoramas)
         self.panoramas = [os.path.join(self.fullsize_panoramas, pano) for pano in os.listdir(self.fullsize_panoramas) if os.path.isfile(os.path.join(self.fullsize_panoramas, pano)) ]
+        
+        self._exif_cache()
         e = Exif(self.panoramas)
         self.exifdata = e.get_exifdata()
 
+    def _exif_cache(self):
+        
+        logger.warn("########### SETTING UP CACHE #############################")
+        
+
 
     def js_helper(self):
+        """return a javascript file with a variable holing the siteurl"""
+        
         file_path = os.path.join(self.output_path, "helper.js")
         #output_js = os.path.join(tile_path, obj.scene, "tour.json")
         f = open(file_path, 'w')
@@ -209,7 +219,6 @@ class PannellumGenerator(Generator):
         self.scenes = scenes                
     
     def generate_output(self, writer=None):
-        logger.error(str(self.scenes ))
         # we don't use the writer passed as argument here
         # since we write our own files
         json_path = os.path.join(self.output_path, self.json_folder)
