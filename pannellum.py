@@ -103,6 +103,7 @@ class PannellumGenerator(Generator):
             tour = Tour(debug=self.debug, tile_folder=tile_path, firstScene=obj.scene, basePath=base_path, autoRotate=self.autoRotate, exifdata=exifdata, panoramas=panoramas)
             for scene in tour.scenes:
                 scene.tile(force=False)
+                scene.fallback(force=False)
             
             sizes_path = os.path.join(CONTENT_FOLDER, self.sizes_folder, obj.scene)
             _get_or_create_path(sizes_path)
@@ -223,7 +224,7 @@ class PannellumGenerator(Generator):
         # since we write our own files
         json_path = os.path.join(self.output_path, self.json_folder)
         tile_path = os.path.join(CONTENT_FOLDER, self.tile_folder)
-        base_path = '../'
+        base_path = '..'
         _get_or_create_path(json_path)
         _get_or_create_path(tile_path)
         self.worldmap()
