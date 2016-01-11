@@ -103,8 +103,8 @@ class PannellumGenerator(Generator):
             tour = Tour(debug=self.debug, tile_folder=tile_path, firstScene=obj.scene, basePath=base_path, autoRotate=self.autoRotate, exifdata=exifdata, panoramas=panoramas)
             for scene in tour.scenes:
                 scene.tile(force=False)
+                logger.info('### fallback for %s', scene.scene_id) 
                 scene.fallback(force=False)
-            
             sizes_path = os.path.join(CONTENT_FOLDER, self.sizes_folder, obj.scene)
             _get_or_create_path(sizes_path)
             for name, size in self.sizes.iteritems():
@@ -115,7 +115,7 @@ class PannellumGenerator(Generator):
             f = open(output_json, 'w')
             f.write(tour.get_json())
             f.close
-            logger.warn('[ok] writing %s' % output_json)
+            logger.info('[ok] writing %s', output_json)
 
     def worldmap(self):
         
