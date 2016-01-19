@@ -197,21 +197,19 @@ class PannellumGenerator(Generator):
         for article in scene_articles:
             
             exif = self.exifdata[article.scene]
-            lng = exif['lng']
-            lat = exif['lat']
+            latlng = exif.get('latlng', None)
                         
             scenes[article.scene] = {
                 'url':article.url,
-                'lat':lat,
-                'lng':lng,
+                'latlng':latlng,
                 'title':article.title
                 }
             
            
-            if lat:
-                article.Latitude = dec2sexa(lat, latlng='lat', precision=2)
-            if lng:
-                article.Longitude = dec2sexa(lng, latlng='lng', precision=2)
+            if latlng:
+                article.Latitude = dec2sexa(latlng[0], latlng='lat', precision=2)
+                article.Longitude = dec2sexa(latlng[1], latlng='lng', precision=2)
+            
             article.exif = exif
             article.template = 'panorama'
             if hasattr(article,'tour'):
