@@ -212,6 +212,8 @@ class PannellumGenerator(Generator):
             
             article.exif = exif
             article.template = 'panorama'
+            article.image = '%s/%s/%s-preview.jpg' % (SIZES_FOLDER, article.scene, article.scene)
+            
             if hasattr(article,'tour'):
                 article.scenes = tours[article.tour]
                 
