@@ -68,6 +68,7 @@ class PannellumGenerator(Generator):
             'icon': (150, 50)
             }
         self.fullsize_panoramas  = os.path.join(CONTENT_FOLDER, self.settings['FULLSIZE_PANORAMAS'])
+        self.preview_panoramas  = os.path.join(CONTENT_FOLDER, self.settings['PREVIEW_PANORAMAS'])
         if not os.path.isdir(self.fullsize_panoramas):
             logger.warn("%s does not exist" % self.fullsize_panoramas)
         self.panoramas = [os.path.join(self.fullsize_panoramas, pano) for pano in os.listdir(self.fullsize_panoramas) if os.path.isfile(os.path.join(self.fullsize_panoramas, pano)) ]
@@ -94,13 +95,24 @@ class PannellumGenerator(Generator):
     def _create_tiles(self, obj, json_path, tile_path, base_path):
         
         panorama = os.path.join(self.fullsize_panoramas, obj.scene + '.jpg')
+        preview = os.path.join(self.preview_panoramas, obj.scene + '.jpg')
         panoramas = [os.path.join(self.fullsize_panoramas, pano + '.jpg') for pano in obj.scenes ]
         exifdata = {scene_id: self.exifdata[scene_id] for scene_id in obj.scenes } 
+        
+        if not os.path.isfile(preview):
+            preview = panorama
+            logger.warn("%s does not exist, using %s" % (preview, panorama))
         
         if not os.path.isfile(panorama):
             logger.error("%s does not exist" % panorama)
         else:    
-            tour = Tour(debug=self.debug, tile_folder=tile_path, firstScene=obj.scene, basePath=base_path, autoRotate=self.autoRotate, exifdata=exifdata, panoramas=panoramas)
+            tour = Tour(debug=self.debug, 
+                        tile_folder=tile_path, 
+                        firstScene=obj.scene, 
+                        basePath=base_path, 
+                        autoRotate=self.autoRotate, 
+                        exifdata=exifdata, 
+                        panoramas=panoramas)
             for scene in tour.scenes:
                 scene.tile(force=False)
                 logger.info('### fallback for %s', scene.scene_id) 
@@ -108,7 +120,7 @@ class PannellumGenerator(Generator):
             sizes_path = os.path.join(CONTENT_FOLDER, self.sizes_folder, obj.scene)
             _get_or_create_path(sizes_path)
             for name, size in self.sizes.iteritems():
-                self._get_scales(obj.scene, panorama, name, size[0], size[1], sizes_folder=sizes_path)
+                self._get_scales(obj.scene, preview, name, size[0], size[1], sizes_folder=sizes_path)
             # writing viewer configuration file
             
             output_json = os.path.join(tile_path, obj.scene, "tour.json")
