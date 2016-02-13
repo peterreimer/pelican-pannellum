@@ -58,6 +58,7 @@ class PannellumGenerator(Generator):
         config = self.settings.get('PANNELLUM', {})
         self.debug = config.get('debug', False)
         self.autoRotate = config.get('autoRotate', 5)
+        self.sceneFadeDuration = config.get('sceneFadeDuration', 0)
         self.tile_folder = config.get('tile_folder', TILE_FOLDER)
         self.sizes_folder = config.get('sizes_folder', SIZES_FOLDER)
 
@@ -108,7 +109,8 @@ class PannellumGenerator(Generator):
         else:    
             tour = Tour(debug=self.debug, 
                         tile_folder=tile_path, 
-                        firstScene=obj.scene, 
+                        firstScene=obj.scene,
+                        sceneFadeDuration=self.sceneFadeDuration,
                         basePath=base_path, 
                         autoRotate=self.autoRotate, 
                         exifdata=exifdata, 
