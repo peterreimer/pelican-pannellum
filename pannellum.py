@@ -101,8 +101,8 @@ class PannellumGenerator(Generator):
         exifdata = {scene_id: self.exifdata[scene_id] for scene_id in obj.scenes } 
         
         if not os.path.isfile(preview):
-            preview = panorama
             logger.warn("%s does not exist, using %s" % (preview, panorama))
+            preview = panorama
         
         if not os.path.isfile(panorama):
             logger.error("%s does not exist" % panorama)
@@ -117,14 +117,13 @@ class PannellumGenerator(Generator):
                         panoramas=panoramas)
             for scene in tour.scenes:
                 scene.tile(force=False)
-                logger.info('### fallback for %s', scene.scene_id) 
                 scene.fallback(force=False)
             sizes_path = os.path.join(CONTENT_FOLDER, self.sizes_folder, obj.scene)
             _get_or_create_path(sizes_path)
             for name, size in self.sizes.iteritems():
                 self._get_scales(obj.scene, preview, name, size[0], size[1], sizes_folder=sizes_path)
+
             # writing viewer configuration file
-            
             output_json = os.path.join(tile_path, obj.scene, "tour.json")
             f = open(output_json, 'w')
             f.write(tour.get_json())
