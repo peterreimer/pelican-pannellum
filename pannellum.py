@@ -24,6 +24,7 @@ CONTENT_FOLDER = 'content'
 
 # setting up some defaults
 TILE_FOLDER = 'tiles'
+TILE_URL = None
 SIZES_FOLDER = 'sizes'
 
 def sign(x):
@@ -60,6 +61,7 @@ class PannellumGenerator(Generator):
         self.autoRotate = config.get('autoRotate', 5)
         self.sceneFadeDuration = config.get('sceneFadeDuration', 0)
         self.tile_folder = config.get('tile_folder', TILE_FOLDER)
+        self.tile_url = config.get('tile_url', TILE_URL)
         self.sizes_folder = config.get('sizes_folder', SIZES_FOLDER)
 
         self.json_folder = self.settings['JSON_FOLDER']
@@ -124,7 +126,7 @@ class PannellumGenerator(Generator):
                 self._get_scales(obj.scene, preview, name, size[0], size[1], sizes_folder=sizes_path)
 
             # writing viewer configuration file
-            output_json = os.path.join(tile_path, obj.scene, "tour.json")
+            output_json = os.path.join(self.output_path, obj.url, "tour.json")
             f = open(output_json, 'w')
             f.write(tour.get_json())
             f.close
@@ -237,7 +239,7 @@ class PannellumGenerator(Generator):
         # since we write our own files
         json_path = os.path.join(self.output_path, self.json_folder)
         tile_path = os.path.join(CONTENT_FOLDER, self.tile_folder)
-        base_path = '..'
+        base_path = self.tile_url
         _get_or_create_path(json_path)
         _get_or_create_path(tile_path)
         self.worldmap()
