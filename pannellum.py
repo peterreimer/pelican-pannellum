@@ -39,7 +39,7 @@ def dec2sexa(angle, latlng, precision=3):
     """convert decimal to sexagesimal coordinates"""
 
     lettercodes = {
-        'lat':{-1:'S', 0:'', 1:'N'}, 
+        'lat':{-1:'S', 0:'', 1:'N'},
         'lng':{-1:'W', 0:'', 1:'E'}
     }
     degree = abs(angle)
@@ -54,7 +54,8 @@ class PannellumGenerator(Generator):
     """Generate XMLs on the output dir, for articles containing pano_ids"""
     
     def __init__(self, *args, **kwargs):
-        """doc"""
+        """doc
+        """
         super(PannellumGenerator, self).__init__(*args, **kwargs)
         config = self.settings.get('PANNELLUM', {})
         self.debug = config.get('debug', False)
@@ -65,13 +66,13 @@ class PannellumGenerator(Generator):
         self.sizes_folder = config.get('sizes_folder', SIZES_FOLDER)
 
         self.json_folder = self.settings['JSON_FOLDER']
-        self.sizes  = {
+        self.sizes = {
             'banner' : (1024, 256),
             'preview' : (600, 200),
             'icon': (150, 50)
             }
-        self.fullsize_panoramas  = os.path.join(CONTENT_FOLDER, self.settings['FULLSIZE_PANORAMAS'])
-        self.preview_panoramas  = os.path.join(CONTENT_FOLDER, self.settings['PREVIEW_PANORAMAS'])
+        self.fullsize_panoramas = os.path.join(CONTENT_FOLDER, self.settings['FULLSIZE_PANORAMAS'])
+        self.preview_panoramas = os.path.join(CONTENT_FOLDER, self.settings['PREVIEW_PANORAMAS'])
         if not os.path.isdir(self.fullsize_panoramas):
             logger.warn("%s does not exist" % self.fullsize_panoramas)
         self.panoramas = [os.path.join(self.fullsize_panoramas, pano) for pano in os.listdir(self.fullsize_panoramas) if os.path.isfile(os.path.join(self.fullsize_panoramas, pano)) ]
@@ -90,7 +91,7 @@ class PannellumGenerator(Generator):
         """return a javascript file with a variable holing the siteurl"""
         
         file_path = os.path.join(self.output_path, "helper.js")
-        #output_js = os.path.join(tile_path, obj.scene, "tour.json")
+        # output_js = os.path.join(tile_path, obj.scene, "tour.json")
         f = open(file_path, 'w')
         f.write("var site_url='%s';" % self.settings['SITEURL'])
         f.close
@@ -103,7 +104,7 @@ class PannellumGenerator(Generator):
         exifdata = {scene_id: self.exifdata[scene_id] for scene_id in obj.scenes } 
         
         debug = self.debug
-        if hasattr(obj,'debug'):
+        if hasattr(obj, 'debug'):
             logger.warn("Scene %s %s" % (obj.scene, obj.debug))
 
             if obj.debug == 'True':
@@ -116,13 +117,13 @@ class PannellumGenerator(Generator):
         if not os.path.isfile(panorama):
             logger.error("%s does not exist" % panorama)
         else:    
-            tour = Tour(debug=debug, 
-                        tile_folder=tile_path, 
+            tour = Tour(debug=debug,
+                        tile_folder=tile_path,
                         firstScene=obj.scene,
                         sceneFadeDuration=self.sceneFadeDuration,
-                        basePath=base_path, 
-                        autoRotate=self.autoRotate, 
-                        exifdata=exifdata, 
+                        basePath=base_path,
+                        autoRotate=self.autoRotate,
+                        exifdata=exifdata,
                         panoramas=panoramas)
             for scene in tour.scenes:
                 scene.tile(force=False)
@@ -184,7 +185,7 @@ class PannellumGenerator(Generator):
 
             cropped = pano.crop([left, upper, right, lower])
             cropped = cropped.resize([width, height], PIL.Image.ANTIALIAS)
-            cropped.save(file_path, quality = 80)
+            cropped.save(file_path, quality=80)
         else:
             logger.info('skipping creation of %s' % file_path)
 
@@ -196,7 +197,7 @@ class PannellumGenerator(Generator):
         latest_scene = None
         # find all scenes/panoramas
         for article in self.context['articles']:
-            if hasattr(article,'scene'):
+            if hasattr(article, 'scene'):
                 scene_articles.append(article)
                 # remember the most recent scene as 'latest_scene' to display as banner on homepage 
                 if not latest_scene:
@@ -209,7 +210,7 @@ class PannellumGenerator(Generator):
                 # initialize scenes (plural) variable with single scene id
                 # gets evtually overwritten later, when tour id is present on more articles 
                 article.scenes = [article.scene]
-                if hasattr(article,'tour'):
+                if hasattr(article, 'tour'):
                     tour = article.tour
                     if not tour in tours:
                         tours[tour] = []
@@ -236,7 +237,7 @@ class PannellumGenerator(Generator):
             article.template = 'panorama'
             article.image = '%s/%s/%s-preview.jpg' % (SIZES_FOLDER, article.scene, article.scene)
             
-            if hasattr(article,'tour'):
+            if hasattr(article, 'tour'):
                 article.scenes = tours[article.tour]
                 
         self.scenes = scenes                
@@ -252,7 +253,7 @@ class PannellumGenerator(Generator):
         self.worldmap()
         self.js_helper()
         for article in self.context['articles']:
-            if hasattr(article,'scene'):
+            if hasattr(article, 'scene'):
                 self._create_tiles(article, json_path, tile_path, base_path)
                 self._map_locations(article)
                     
@@ -272,13 +273,13 @@ if __name__ == "__main__":
     # DG  51.354577629215335  6.537648439407349
     # GMS N 51° 21' 16.479''  O 6° 32' 15.534''
 
-    #lat = 0
-    #lng = 0.0
+    # lat = 0
+    # lng = 0.0
 
     lat = 51.354577629215335
     lng = 6.537648439407349
-    #lat = -17.86407
-    #lng = 28.70051
-    #l = LatLng(latlng)
+    # lat = -17.86407
+    # lng = 28.70051
+    # l = LatLng(latlng)
     print(dec2sexa(lat, latlng='lat', precision=2))
     print(dec2sexa(lng, latlng='lng', precision=2))
