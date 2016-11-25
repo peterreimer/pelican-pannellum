@@ -102,6 +102,13 @@ class PannellumGenerator(Generator):
         panoramas = [os.path.join(self.fullsize_panoramas, pano + '.jpg') for pano in obj.scenes ]
         exifdata = {scene_id: self.exifdata[scene_id] for scene_id in obj.scenes } 
         
+        debug = self.debug
+        if hasattr(obj,'debug'):
+            logger.warn("Scene %s %s" % (obj.scene, obj.debug))
+
+            if obj.debug == 'True':
+                debug = True
+
         if not os.path.isfile(preview):
             logger.warn("%s does not exist, using %s" % (preview, panorama))
             preview = panorama
@@ -109,7 +116,7 @@ class PannellumGenerator(Generator):
         if not os.path.isfile(panorama):
             logger.error("%s does not exist" % panorama)
         else:    
-            tour = Tour(debug=self.debug, 
+            tour = Tour(debug=debug, 
                         tile_folder=tile_path, 
                         firstScene=obj.scene,
                         sceneFadeDuration=self.sceneFadeDuration,
